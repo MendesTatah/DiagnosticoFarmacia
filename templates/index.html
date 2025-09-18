@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Diagnóstico para Farmácias</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <img src="{{ url_for('static', filename='RESULT.png') }}" alt="Logomarca da Empresa" class="logo">
+
+    <div class="container">
+        <h1>Análise Financeira para Farmácias</h1>
+        <p>Preencha os dados para receber um diagnóstico completo do seu negócio.</p>
+        
+        <form id="diagnostico-form">
+            <div class="input-group">
+                <label for="faturamento_bruto">Faturamento Bruto (R$):</label>
+                <input type="number" id="faturamento_bruto" required>
+            </div>
+            <div class="input-group">
+                <label for="cmv">Custo de Mercadoria Vendida (CMV) (R$):</label>
+                <input type="number" id="cmv" required>
+            </div>
+            <div class="input-group">
+                <label for="descontos">Descontos Concedidos (R$):</label>
+                <input type="number" id="descontos" required>
+            </div>
+            <div class="input-group">
+                <label for="despesas">Despesas Operacionais (R$):</label>
+                <input type="number" id="despesas" required>
+            </div>
+            <button type="submit">Gerar Diagnóstico</button>
+        </form>
+
+        <div id="resultado" class="hidden">
+            <h2>Relatório de Análise</h2>
+            <p><strong>Faturamento Líquido:</strong> R$ <span id="resultado-faturamento-liquido"></span></p>
+            <p><strong>Lucro Bruto:</strong> R$ <span id="resultado-lucro-bruto"></span></p>
+            <p><strong>Lucro Líquido:</strong> R$ <span id="resultado-lucro-liquido"></span></p>
+            <p><strong>Margem Bruta:</strong> <span id="resultado-margem-bruta"></span>%</p>
+            <p><strong>Margem Líquida:</strong> <span id="resultado-margem-liquida"></span>%</p>
+
+            <h3>Sugestões para Melhoria:</h3>
+            <ul id="sugestoes-lista"></ul>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('diagnostico-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const dados = {
+                faturamento_bruto: document.getElementById('faturamento_bruto').value,
+                cmv: document.getElementById('cmv').value,
+                descontos: document.getElementById('descontos').value,
+                despesas: document.getElementById('despesas').value,
+            };
+
+            const resposta = await fetch('/diagnosticar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dados),
+            });
+
+            const resultado = await resposta.json();
+            
+            document.getElementById('resultado-faturamento-liquido').textContent = resultado.faturamento_liquido.toFixed(2).replace('.', ',');
+            document.getElementById('resultado-lucro-bruto').textContent = resultado.lucro_bruto.toFixed(2).replace('.', ',');
+            document.getElementById('resultado-lucro-liquido').textContent = resultado.lucro_liquido.toFixed(2).replace('.', ',');
+            document.getElementById('resultado-margem-bruta').textContent = resultado.margem_bruta.toFixed(2).replace('.', ',');
+            document.getElementById('resultado-margem-liquida').textContent = resultado.margem_liquida.toFixed(2).replace('.', ',');
+
+            const sugestoesLista = document.getElementById('sugestoes-lista');
+            sugestoesLista.innerHTML = '';
+            if (resultado.sugestoes.length > 0) {
+                resultado.sugestoes.forEach(sugestao => {
+                    const li = document.createElement('li');
+                    li.textContent = sugestao;
+                    sugestoesLista.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = 'Parece que seu negócio está saudável! Continue monitorando os indicadores.';
+                sugestoesLista.appendChild(li);
+            }
+
+            document.getElementById('resultado').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
